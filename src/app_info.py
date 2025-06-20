@@ -1,0 +1,2 @@
+APP_NAME = "PeakHODLER"
+APP_VERSION = "1.0.0"

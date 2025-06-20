@@ -28,7 +28,7 @@ setup(
 
     name=APP_NAME,
     version=APP_VERSION,
-    url='',
+    url='https://github.com/dwightmulcahy',
     license='MIT License',
     author='dWiGhT',
     author_email='dWiGhTMulcahy@gmail.com',

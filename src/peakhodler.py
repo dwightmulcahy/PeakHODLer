@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import webbrowser
 from datetime import datetime
 from typing import Optional, Tuple, List, Dict, Any, Union, TypedDict
@@ -11,6 +12,7 @@ import src.constants as constants
 
 from src.app_info import APP_NAME, APP_VERSION
 from src.colorlogging import setup_logging
+from src.login_item import is_login_item_enabled, disable_login_item, enable_login_item
 
 # Call setup_logging once at the start
 logger, log_path = setup_logging(APP_NAME)
@@ -25,7 +27,7 @@ class IndicatorItem(TypedDict):
     hit_time: Optional[int]  # Unix timestamp in milliseconds
 
 
-class BullMarketStatusApp(rumps.App):
+class PeakHODLerStatusApp(rumps.App):
     """
     A macOS menubar application to display the CoinGlass BTC Bull Market Peak Indicator.
 
@@ -80,6 +82,7 @@ class BullMarketStatusApp(rumps.App):
         self.set_api_key_item = rumps.MenuItem("Set API Key...", callback=self.set_api_key)
         self.set_refresh_rate_item = rumps.MenuItem(
             f"Set Refresh Rate ({self.refresh_rate_minutes} min)...", callback=self.set_refresh_rate)
+        self.launch_at_login_item = rumps.MenuItem( "Launch at Login" )
 
         # About menu item
         self.about_item = rumps.MenuItem(f"About {APP_NAME}", callback=self.about_app)
@@ -87,8 +90,12 @@ class BullMarketStatusApp(rumps.App):
 
         # Settings submenu
         self.settings_menu = rumps.MenuItem("Settings")
+        self.settings_menu.add(self.launch_at_login_item)
         self.settings_menu.add(self.set_api_key_item)
         self.settings_menu.add(self.set_refresh_rate_item)
+
+        if not is_login_item_enabled(APP_NAME):
+            self.launch_at_login_item.set_callback(self.toggle_launch_at_login)
 
     def _build_menu(self) -> None:
         """Constructs the application's menubar menu."""
@@ -170,6 +177,18 @@ class BullMarketStatusApp(rumps.App):
     def _save_refresh_rate(self, rate: int) -> bool:
         """Saves the refresh rate to its designated file."""
         return self._save_file_content(constants.REFRESH_RATE_FILE, str(rate))
+
+    @staticmethod
+    def toggle_launch_at_login(sender: rumps.MenuItem) -> None:
+        app_path = os.path.abspath(sys.argv[0])
+        if sender.state:
+            disable_login_item()
+            sender.state = False
+            logger.info("Launch at Login disabled.")
+        else:
+            enable_login_item(app_path)
+            sender.state = True
+            logger.info("Launch at Login enabled.")
 
     # noinspection PyProtectedMember
     @rumps.clicked("Settings", "Set API Key...")
@@ -431,8 +450,8 @@ class BullMarketStatusApp(rumps.App):
 
                 success, result_or_error_msg, status_code = await self._attempt_fetch_data(session, headers)
 
-                if success:
-                    json_data: Dict[str, Any] = result_or_error_msg  # Type assertion here for `result_or_error_msg`
+                if success and result_or_error_msg["code"] == '200':  # type: ignore
+                    json_data: Dict[str, Any] = result_or_error_msg  # type: ignore
                     data: List[Dict[str, Any]] = json_data.get("data", [])
                     total: int = len(data)
                     hits: List[Dict[str, Any]] = [item for item in data if
@@ -444,6 +463,10 @@ class BullMarketStatusApp(rumps.App):
 
                     logger.info(f"Hold: {hold_pct:.2f}% | Sell: {sell_pct:.2f}% | Signal: {label}")
                     return round(hold_pct, 2), round(sell_pct, 2), label, hits
+                elif result_or_error_msg["code"] == '400':  # type: ignore
+                    # Bad API request somehow
+                    logger.error(f"Failed API call. Reason: `{result_or_error_msg['msg']}`")  # type: ignore
+                    return None, None, str(result_or_error_msg), []
                 else:
                     # Handle failure of the attempt
                     # Status_code is None for network errors caught by aiohttp.ClientError
@@ -551,5 +574,5 @@ class BullMarketStatusApp(rumps.App):
 
 if __name__ == "__main__":
     logger.info("Starting Bull Market Status App.")
-    BullMarketStatusApp().run()
+    PeakHODLerStatusApp().run()
     logger.info("Stopping Bull Market Status App.")

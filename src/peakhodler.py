@@ -10,9 +10,11 @@ import rumps
 
 import src.constants as constants
 
-from src.app_info import APP_NAME, APP_VERSION
-from src.colorlogging import setup_logging
-from src.login_item import is_login_item_enabled, disable_login_item, enable_login_item
+from app_info import APP_NAME, APP_VERSION
+from colorlogging import setup_logging
+import login_item
+
+# TODO: need to make login_items work correctly
 
 # Call setup_logging once at the start
 logger, log_path = setup_logging(APP_NAME)
@@ -94,7 +96,7 @@ class PeakHODLerStatusApp(rumps.App):
         self.settings_menu.add(self.set_api_key_item)
         self.settings_menu.add(self.set_refresh_rate_item)
 
-        if not is_login_item_enabled(APP_NAME):
+        if not login_item.is_login_item_enabled(APP_NAME):
             self.launch_at_login_item.set_callback(self.toggle_launch_at_login)
 
     def _build_menu(self) -> None:
@@ -182,11 +184,11 @@ class PeakHODLerStatusApp(rumps.App):
     def toggle_launch_at_login(sender: rumps.MenuItem) -> None:
         app_path = os.path.abspath(sys.argv[0])
         if sender.state:
-            disable_login_item()
+            login_item.disable_login_item()
             sender.state = False
             logger.info("Launch at Login disabled.")
         else:
-            enable_login_item(app_path)
+            login_item.enable_login_item(app_path)
             sender.state = True
             logger.info("Launch at Login enabled.")
 
@@ -238,9 +240,9 @@ class PeakHODLerStatusApp(rumps.App):
         if response.clicked != 0:  # OK button was clicked
             try:
                 new_rate: int = int(response.text.strip())
-                if new_rate <= 0:
-                    rumps.alert("Invalid Input", "Refresh rate must be a positive number.")
-                    logger.warning("User entered invalid refresh rate (<= 0).")
+                if new_rate <= 15:
+                    rumps.alert("Invalid Input", "Refresh rate must at least be 15 minutes.")
+                    logger.warning("User entered invalid refresh rate (<= 15 minutes).")
                     return
 
                 # Update the refresh interval if a new rate is inputted

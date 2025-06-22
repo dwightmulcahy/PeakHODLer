@@ -1,6 +1,5 @@
 import asyncio
 import os
-import sys
 import webbrowser
 from datetime import datetime
 from typing import Optional, Tuple, List, Dict, Any, Union, TypedDict
@@ -10,11 +9,9 @@ import rumps
 
 import src.constants as constants
 
-from app_info import APP_NAME, APP_VERSION
-from colorlogging import setup_logging
-import login_item
-
-# TODO: need to make login_items work correctly
+from src.app_info import APP_NAME, APP_VERSION
+from src.colorlogging import setup_logging
+from src.login_item import LoginItemManager
 
 # Call setup_logging once at the start
 logger, log_path = setup_logging(APP_NAME)
@@ -46,6 +43,9 @@ class PeakHODLerStatusApp(rumps.App):
         Initializes the BullMarketStatusApp.
         """
         super().__init__("📊 Loading...")
+
+        #
+        self.launch_at_login: LoginItemManager = LoginItemManager()
 
         self.api_key: Optional[str] = self._load_file_content(constants.API_KEY_FILE)
         self.refresh_rate_minutes: int = self._load_refresh_rate()
@@ -96,7 +96,7 @@ class PeakHODLerStatusApp(rumps.App):
         self.settings_menu.add(self.set_api_key_item)
         self.settings_menu.add(self.set_refresh_rate_item)
 
-        if not login_item.is_login_item_enabled(APP_NAME):
+        if not self.launch_at_login.is_login_item_enabled():
             self.launch_at_login_item.set_callback(self.toggle_launch_at_login)
 
     def _build_menu(self) -> None:
@@ -180,16 +180,12 @@ class PeakHODLerStatusApp(rumps.App):
         """Saves the refresh rate to its designated file."""
         return self._save_file_content(constants.REFRESH_RATE_FILE, str(rate))
 
-    @staticmethod
-    def toggle_launch_at_login(sender: rumps.MenuItem) -> None:
-        app_path = os.path.abspath(sys.argv[0])
+    def toggle_launch_at_login(self, sender: rumps.MenuItem) -> None:
         if sender.state:
-            login_item.disable_login_item()
-            sender.state = False
+            sender.state = not self.launch_at_login.disable_login_item()
             logger.info("Launch at Login disabled.")
         else:
-            login_item.enable_login_item(app_path)
-            sender.state = True
+            sender.state = self.launch_at_login.enable_login_item()
             logger.info("Launch at Login enabled.")
 
     # noinspection PyProtectedMember

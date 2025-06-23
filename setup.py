@@ -1,3 +1,5 @@
+from typing import Any
+
 from setuptools import setup, find_packages # Good, keep find_packages
 
 # The imports below are fine *because setup.py is not inside src*
@@ -5,7 +7,7 @@ from setuptools import setup, find_packages # Good, keep find_packages
 from src.app_info import APP_NAME, APP_VERSION
 
 APP = ['./src/peakhodler.py'] # Correctly points to your main script within src
-DATA_FILES = []
+DATA_FILES: list[Any] = []
 OPTIONS = {
     'argv_emulation': False,
     'plist': {

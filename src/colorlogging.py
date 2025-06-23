@@ -34,13 +34,13 @@ def setup_logging(app_name: str, log_level=logging.INFO):
     log_dir_name = app_name.replace(" ", "_").lower()
     log_dir = os.path.join(os.path.expanduser('~'), 'Library', 'Logs', log_dir_name)
     os.makedirs(log_dir, exist_ok=True)
-    log_file_path = os.path.join(log_dir, 'app.log')
+    log_file_path = os.path.join(log_dir, f'{app_name}.log')
 
     # Conditionally clear the log file (only in non-production environments)
     if os.environ.get("ENV", "dev") != "production":
         try:
             with open(log_file_path, 'w', encoding="utf-8"):
-                pass
+                pass # opening the file with 'w' overwrites the file
             sys.stderr.write(f"[INFO] Log file '{log_file_path}' cleared on app start.\n")
         except Exception as e:
             sys.stderr.write(f"[ERROR] Failed to clear log file '{log_file_path}': {e}\n")

@@ -1,7 +1,6 @@
 import logging
 import subprocess
 import sys
-import re
 import os
 import plistlib  # For reading Info.plist from .app bundles
 
@@ -98,20 +97,20 @@ class LoginItemManager:
       For scripts, it uses the script's filename.
       """
       if self._is_app_bundle:
-         info_plist_path = os.path.join(self._app_path, 'Contents', 'Info.plist')
+         info_plist_path = os.path.join(self._app_path, 'Contents', 'Info.plist')  # type: ignore
          if os.path.exists(info_plist_path):
             try:
                with open(info_plist_path, 'rb') as fp:
                   plist_data = plistlib.load(fp)
                   # Prefer CFBundleDisplayName, fallback to CFBundleName
-                  return plist_data.get('CFBundleDisplayName') or plist_data.get('CFBundleName') or os.path.basename(
+                  return plist_data.get('CFBundleDisplayName') or plist_data.get('CFBundleName') or os.path.basename(  # type: ignore
                      self._app_path).replace('.app', '')
             except Exception as e:
                logger.warning(
                   f"Could not read Info.plist for '{self._app_path}'. Error: {e}. Falling back to bundle name.")
-         return os.path.basename(self._app_path).replace('.app', '')
+         return os.path.basename(self._app_path).replace('.app', '')  # type: ignore
       else:
-         return os.path.basename(self._app_path)
+         return os.path.basename(self._app_path)  # type: ignore
 
    def is_login_item_enabled(self) -> bool:
       """
@@ -194,7 +193,7 @@ class LoginItemManager:
 
          # Fallback for scripts if the primary name failed, and the script name is different
          if not self._is_app_bundle:
-            script_filename = os.path.basename(self._app_path)
+            script_filename = os.path.basename(self._app_path)  # type: ignore
             if script_filename and script_filename != self._app_name:
                logger.warning(
                   f"Login item '{self._app_name}' not found. Attempting to delete by script filename: '{script_filename}'")
@@ -233,87 +232,3 @@ class LoginItemManager:
          "application_path": self._app_path,
          "login_item_name_used": self._app_name
       }
-
-
-# --- Example Usage ---
-if __name__ == "__main__":
-   logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-   # --- Simulate .app bundle (for demonstration purposes only) ---
-   # In a real .app bundle, sys.executable points inside the bundle.
-   # For demonstration, let's manually set a mock sys.executable and __file__.
-   original_sys_executable = sys.executable
-   original_file = __file__
-
-   # Mock sys.executable and __file__ to simulate being inside an .app bundle
-   # Create dummy directories and an Info.plist for testing _derive_app_name_from_path
-   mock_app_dir = os.path.join(os.getcwd(), 'MockApp.app')
-   mock_contents_dir = os.path.join(mock_app_dir, 'Contents')
-   mock_macos_dir = os.path.join(mock_contents_dir, 'MacOS')
-   mock_resources_dir = os.path.join(mock_contents_dir, 'Resources')
-
-   os.makedirs(mock_macos_dir, exist_ok=True)
-   os.makedirs(mock_resources_dir, exist_ok=True)
-
-   # Create a dummy Info.plist
-   dummy_plist_content = {
-      'CFBundleDisplayName': 'MyBundledApp',
-      'CFBundleIdentifier': 'com.example.mybundledapp',
-      'CFBundleName': 'BundledAppCore',
-      'CFBundleExecutable': 'MyBundledApp'
-   }
-   with open(os.path.join(mock_contents_dir, 'Info.plist'), 'wb') as fp:
-      plistlib.dump(dummy_plist_content, fp)
-
-   sys.executable = os.path.join(mock_macos_dir, 'MyBundledAppExecutable')
-   __file__ = os.path.join(mock_resources_dir, 'main.py')  # __file__ usually points to script within Resources
-
-   print("\n--- Simulating .app bundle ---")
-   # Test with app_name=None to let the class derive it
-   manager_bundle_derived_name = LoginItemManager(app_name=None)
-   info_bundle_derived = manager_bundle_derived_name.get_app_type_info()
-   print(f"App Type Info (derived name): {info_bundle_derived}")
-   print(
-      f"Is '{manager_bundle_derived_name._app_name}' login item enabled? {manager_bundle_derived_name.is_login_item_enabled()}")
-   # Example: Enable/Disable (uncomment to test on your system)
-   # print(f"Attempting to enable '{manager_bundle_derived_name._app_name}' login item: {manager_bundle_derived_name.enable_login_item()}")
-   # print(f"Attempting to disable '{manager_bundle_derived_name._app_name}' login item: {manager_bundle_derived_name.disable_login_item()}")
-
-   # Test with an explicit app_name
-   manager_bundle_explicit_name = LoginItemManager(app_name="ExplicitAppLoginItem")
-   info_bundle_explicit = manager_bundle_explicit_name.get_app_type_info()
-   print(f"\nApp Type Info (explicit name): {info_bundle_explicit}")
-   print(
-      f"Is '{manager_bundle_explicit_name._app_name}' login item enabled? {manager_bundle_explicit_name.is_login_item_enabled()}")
-
-   # Clean up mock directories
-   import shutil
-
-   shutil.rmtree(mock_app_dir)
-
-   # --- Simulate standalone Python script ---
-   # Restore original sys.executable and __file__
-   sys.executable = original_sys_executable
-   __file__ = original_file
-
-   print("\n--- Simulating standalone Python script ---")
-   # Test with app_name=None to let the class derive it
-   manager_script_derived_name = LoginItemManager(app_name=None)
-   info_script_derived = manager_script_derived_name.get_app_type_info()
-   print(f"App Type Info (derived name): {info_script_derived}")
-   print(
-      f"Is '{manager_script_derived_name._app_name}' login item enabled? {manager_script_derived_name.is_login_item_enabled()}")
-   # Example: Enable/Disable (uncomment to test on your system)
-   # print(f"Attempting to enable '{manager_script_derived_name._app_name}' login item: {manager_script_derived_name.enable_login_item()}")
-   # print(f"Attempting to disable '{manager_script_derived_name._app_name}' login item: {manager_script_derived_name.disable_login_item()}")
-
-   # Test with an explicit app_name
-   manager_script_explicit_name = LoginItemManager(app_name="MyCustomScriptLogin")
-   info_script_explicit = manager_script_explicit_name.get_app_type_info()
-   print(f"\nApp Type Info (explicit name): {info_script_explicit}")
-   print(
-      f"Is '{manager_script_explicit_name._app_name}' login item enabled? {manager_script_explicit_name.is_login_item_enabled()}")
-
-   # Restore for other potential tests if this was part of a larger suite
-   sys.executable = original_sys_executable
-   __file__ = original_file

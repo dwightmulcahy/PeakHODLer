@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import Any
 
 from setuptools import setup, find_packages # Good, keep find_packages
@@ -5,6 +7,16 @@ from setuptools import setup, find_packages # Good, keep find_packages
 # The imports below are fine *because setup.py is not inside src*
 # It's at the project root, so it can import directly from src package
 from src.app_info import APP_NAME, APP_VERSION
+
+
+# Disable adhoc signing if running in GitHub Actions
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    import py2app.util
+
+    def no_op_codesign_adhoc(appdir):
+        print(f"Skipping adhoc codesign for {appdir}")
+    py2app.util.codesign_adhoc = no_op_codesign_adhoc
+
 
 APP = ['./src/peakhodler.py'] # Correctly points to your main script within src
 DATA_FILES: list[Any] = []
@@ -14,7 +26,7 @@ OPTIONS = {
         'LSUIElement': True,
         'CFBundleName': APP_NAME,
         'CFBundleDisplayName': APP_NAME,
-        'CFBundleIdentifier': f'com.yourcompany.{APP_NAME.lower().replace(" ", "")}', # More robust identifier
+        # 'CFBundleIdentifier': f'com.yourcompany.{APP_NAME.lower().replace(" ", "")}', # More robust identifier
         'CFBundleVersion': APP_VERSION,
     },
     'packages': [
@@ -24,11 +36,10 @@ OPTIONS = {
         'asyncio',
         'logging',
         'colorlog',
-        # 'src', # <--- If you use find_packages and package_dir, you might not need 'src' here,
-               # but it doesn't hurt. find_packages will handle it more systematically.
+        'src',
     ],
     'iconfile': './resources/peakhodler.png',
-    'strip': True, # Good practice
+    'strip': False, # Reduce application bundle size
 }
 
 setup(

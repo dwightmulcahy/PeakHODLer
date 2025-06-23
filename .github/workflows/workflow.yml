@@ -1,0 +1,81 @@
+name: Build and Release .dmg
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install wheel py2app setuptools==70.3.0
+        python3 -m pip install -r requirements.txt
+
+    - name: Build macOS app (no codesign)
+      run: |
+        python3 setup.py py2app
+
+#    - name: Remove code signature and quarantine attribute
+#      run: |
+#        # Remove any existing code signature files
+#        rm -rf dist/PeakHODLER.app/Contents/_CodeSignature
+#        rm -rf dist/PeakHODLER.app/Contents/CodeResources
+#        # Remove extended attributes including quarantine (Gatekeeper)
+#        xattr -rc dist/PeakHODLER.app
+
+    - name: Ad-hoc sign .app bundle
+      run: |
+        codesign --force --deep --options runtime --sign - dist/PeakHODLER.app
+
+    - name: Verify code signature
+      run: codesign --verify --deep --strict --verbose=4 dist/PeakHODLER.app
+
+    - name: Install create-dmg
+      run: brew install create-dmg
+
+    - name: Create DMG with custom layout
+      run: |
+        mkdir -p dist/Applications
+        rm -rf dist/Applications
+        ln -s /Applications dist/Applications
+
+        create-dmg \
+          --volname "PeakHODLER" \
+          --volicon "dist/PeakHODLER.app/Contents/resources/peakhodler.png" \
+          --background "resources/dmg_background_arrow.png" \
+          --window-size 500 300 \
+          --icon-size 100 \
+          --icon "PeakHODLER.app" 100 100 \
+          --icon "Applications" 350 100 \
+          --hide-extension "PeakHODLER.app" \
+          --app-drop-link 350 100 \
+          "dist/PeakHODLER.dmg" \
+          "dist"
+
+#    - name: Package as .dmg
+#      run: |
+#        mkdir -p dist/dmg_contents
+#        cp -R dist/PeakHODLER.app dist/dmg_contents/
+#        ln -s /Applications dist/dmg_contents/Applications
+#        hdiutil create -volname "PeakHODLER" \
+#          -srcfolder dist/dmg_contents \
+#          -ov -format UDZO dist/PeakHODLER.dmg
+
+    - name: Upload Release Artifact
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/PeakHODLER.dmg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

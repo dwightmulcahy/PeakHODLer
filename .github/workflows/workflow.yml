@@ -27,6 +27,7 @@ jobs:
       run: |
         python3 setup.py py2app
 
+# TODO: attempt to remove codesig to allow bypass gatekeeper
 #    - name: Remove code signature and quarantine attribute
 #      run: |
 #        # Remove any existing code signature files
@@ -35,35 +36,40 @@ jobs:
 #        # Remove extended attributes including quarantine (Gatekeeper)
 #        xattr -rc dist/PeakHODLER.app
 
-    - name: Ad-hoc sign .app bundle
-      run: |
-        codesign --force --deep --options runtime --sign - dist/PeakHODLER.app
+#
+#  TODO: This actually creates a dmg and tries to make a gatekeeper
+#        compatible .app bundle
+#
+#    - name: Ad-hoc sign .app bundle
+#      run: |
+#        codesign --force --deep --options runtime --sign - dist/PeakHODLER.app
+#
+#    - name: Verify code signature
+#      run: codesign --verify --deep --strict --verbose=4 dist/PeakHODLER.app
+#
+#    - name: Install create-dmg
+#      run: brew install create-dmg
+#
+#    - name: Create DMG with custom layout
+#      run: |
+#        mkdir -p dist/Applications
+#        rm -rf dist/Applications
+#        ln -s /Applications dist/Applications
+#
+#        create-dmg \
+#          --volname "PeakHODLER" \
+#          --volicon "dist/PeakHODLER.app/Contents/resources/peakhodler.png" \
+#          --background "resources/dmg_background_arrow.png" \
+#          --window-size 500 300 \
+#          --icon-size 100 \
+#          --icon "PeakHODLER.app" 100 100 \
+#          --icon "Applications" 350 100 \
+#          --hide-extension "PeakHODLER.app" \
+#          --app-drop-link 350 100 \
+#          "dist/PeakHODLER.dmg" \
+#          "dist"
 
-    - name: Verify code signature
-      run: codesign --verify --deep --strict --verbose=4 dist/PeakHODLER.app
-
-    - name: Install create-dmg
-      run: brew install create-dmg
-
-    - name: Create DMG with custom layout
-      run: |
-        mkdir -p dist/Applications
-        rm -rf dist/Applications
-        ln -s /Applications dist/Applications
-
-        create-dmg \
-          --volname "PeakHODLER" \
-          --volicon "dist/PeakHODLER.app/Contents/resources/peakhodler.png" \
-          --background "resources/dmg_background_arrow.png" \
-          --window-size 500 300 \
-          --icon-size 100 \
-          --icon "PeakHODLER.app" 100 100 \
-          --icon "Applications" 350 100 \
-          --hide-extension "PeakHODLER.app" \
-          --app-drop-link 350 100 \
-          "dist/PeakHODLER.dmg" \
-          "dist"
-
+# TODO: First attempt on packaging dmg
 #    - name: Package as .dmg
 #      run: |
 #        mkdir -p dist/dmg_contents
@@ -76,6 +82,7 @@ jobs:
     - name: Upload Release Artifact
       uses: softprops/action-gh-release@v2
       with:
-        files: dist/PeakHODLER.dmg
+#        files: dist/PeakHODLER.dmg
+        files: dist/PeakHODLER.app
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

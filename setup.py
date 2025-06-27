@@ -53,7 +53,7 @@ setup(
     url='https://github.com/dwightmulcahy',
     license='MIT License',
     author='dWiGhT',
-    author_email='dWiGhTMulcahy@gmail.com',
+    author_email='PeakHODLer@gmail.com',
     description='A macOS menubar application to display a summary of the CoinGlass Bull Market Peak Indicator.',
 
     # --- Add this for more robust package finding ---

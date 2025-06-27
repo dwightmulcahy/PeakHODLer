@@ -528,6 +528,7 @@ class PeakHODLerStatusApp(rumps.App):
                 f"{APP_NAME} v{APP_VERSION}\n\n"
                 "A macOS menubar application to display the CoinGlass BTC Bull Market Peak Indicator.\n\n"
                 "Data provided by CoinGlass.\n"
+                "Github: dwightmulcahy/PeakHODLer.\n"
                 "© 2025 dWiGhT. All rights reserved."
             ),
             ok='Close'

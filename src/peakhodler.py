@@ -7,8 +7,7 @@ from typing import Optional, Tuple, List, Dict, Any, Union, TypedDict
 import aiohttp
 import rumps
 
-import src.constants as constants
-
+from src.constants import const
 from src.app_info import APP_NAME, APP_VERSION
 from src.colorlogging import setup_logging
 from src.login_item import LoginItemManager
@@ -47,7 +46,7 @@ class PeakHODLerStatusApp(rumps.App):
         #
         self.launch_at_login: LoginItemManager = LoginItemManager()
 
-        self.api_key: Optional[str] = self._load_file_content(constants.API_KEY_FILE)
+        self.api_key: Optional[str] = self._load_file_content(const.API_KEY_FILE)
         self.refresh_rate_minutes: int = self._load_refresh_rate()
         # Changed to List[str] as _format_indicator_item returns a string
         self.indicator_list: List[str] = []
@@ -158,27 +157,27 @@ class PeakHODLerStatusApp(rumps.App):
 
     def _load_api_key(self) -> Optional[str]:
         """Loads the API key from its designated file."""
-        return self._load_file_content(constants.API_KEY_FILE)
+        return self._load_file_content(const.API_KEY_FILE)
 
     def _save_api_key(self, key: str) -> bool:
         """Saves the API key to its designated file."""
-        return self._save_file_content(constants.API_KEY_FILE, key)
+        return self._save_file_content(const.API_KEY_FILE, key)
 
     def _load_refresh_rate(self) -> int:
         """
         Loads the refresh rate from its designated file, or returns the default.
         """
-        rate_str: Optional[str] = self._load_file_content(constants.REFRESH_RATE_FILE)
+        rate_str: Optional[str] = self._load_file_content(const.REFRESH_RATE_FILE)
         if rate_str:
             try:
                 return int(rate_str)
             except ValueError:
-                logger.warning(f"Invalid refresh rate found in {constants.REFRESH_RATE_FILE}. Using default.")
-        return constants.DEFAULT_REFRESH_RATE_MINUTES
+                logger.warning(f"Invalid refresh rate found in {const.REFRESH_RATE_FILE}. Using default.")
+        return const.DEFAULT_REFRESH_RATE_MINUTES
 
     def _save_refresh_rate(self, rate: int) -> bool:
         """Saves the refresh rate to its designated file."""
-        return self._save_file_content(constants.REFRESH_RATE_FILE, str(rate))
+        return self._save_file_content(const.REFRESH_RATE_FILE, str(rate))
 
     def toggle_launch_at_login(self, sender: rumps.MenuItem) -> None:
         if sender.state:
@@ -206,7 +205,7 @@ class PeakHODLerStatusApp(rumps.App):
         )
         # Hack to assure that the window appears in front
         # Added type: ignore for rumps' internal _alert which is not officially typed
-        window._alert.window().setLevel_(constants.APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
+        window._alert.window().setLevel_(APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
         response = window.run()
         if response.clicked != 0:  # OK button was clicked
             new_key: str = response.text.strip()
@@ -231,7 +230,7 @@ class PeakHODLerStatusApp(rumps.App):
             cancel='Cancel',
         )
         # Hack to assure that the window appears in front
-        window._alert.window().setLevel_(constants.APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
+        window._alert.window().setLevel_(APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
         response = window.run()
         if response.clicked != 0:  # OK button was clicked
             try:
@@ -262,8 +261,8 @@ class PeakHODLerStatusApp(rumps.App):
         Args:
             _sender: The MenuItem that triggered this callback (unused, but required by rumps).
         """
-        logger.info(f"Opening CoinGlass website: {constants.COINGLASS_URL}")
-        webbrowser.open(constants.COINGLASS_URL)
+        logger.info(f"Opening CoinGlass website: {const.COINGLASS_URL}")
+        webbrowser.open(const.COINGLASS_URL)
 
     @rumps.clicked("Refresh Now")
     def manual_refresh(self, _sender: rumps.MenuItem) -> None:
@@ -395,7 +394,7 @@ class PeakHODLerStatusApp(rumps.App):
         Returns (success: bool, result: Union[Dict[str, Any], str] (json data or error message), status_code: Optional[int]).
         """
         try:
-            async with session.get(constants.API_URL, headers=headers) as resp:
+            async with session.get(const.API_URL, headers=headers) as resp:
                 # Check for specific retriable status codes *before* raising for status
                 if resp.status in [429, 500, 502, 503, 504]:
                     logger.warning(f"API returned retriable status {resp.status}.")
@@ -562,7 +561,7 @@ class PeakHODLerStatusApp(rumps.App):
                 ok='Close',
                 dimensions=(700, 360)
             )
-            window._alert.window().setLevel_(constants.APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
+            window._alert.window().setLevel_(APPKIT_NSFLOATINGWINDOWLEVEL)  # type: ignore
             window.run()
             logger.info("Application log window displayed.")
         except Exception as e:

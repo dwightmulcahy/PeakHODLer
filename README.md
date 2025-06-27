@@ -105,6 +105,6 @@ Quits the application.
 
 ----
 
-- Open `Set API Key` when there is no API Key set
-- Webscrape CoinGlass for the data needed
-- Notifications when one of the indicators is tripped
+- [ ] Open `Set API Key` when there is no API Key set
+- [ ] Webscrape CoinGlass for the data needed
+- [ ] Notifications when one of the indicators is tripped
